@@ -30,11 +30,15 @@ Overlord, Foomni Analytics, etc. - you can test these out as well.
 First we load the data and add the 'player\_id' column in order to be
 able to identify each player using a unique number. We also add a
 variable 'n' specifying the total number of players - this will come in
-handy for our functions below.
+handy for our functions below. 
+
+Importantly, we also transform the 'team' column to integers, for the optimizer to handle. For the FPL Review data, the 'team' column is already integer, but for other sources this might not be the case, so we include the step.
 
     library(dplyr)
 
     data <- read.csv("data/fplreview.csv",sep=";") %>% tibble::rownames_to_column("player_id") 
+    
+    data$team <- as.integer(data$team)
 
     head(data)
 
@@ -91,10 +95,8 @@ modelling below.
       set_objective(model, sum_expr(colwise(xpts(i)) * x[i], i = 1:n))
     }
 
-    # these functions defines how the constraint function (below) will identify the player teams in the data
-    team_int <- as.integer(as.factor(data[["team"]]))
-
-    is_team <- function(j, i) as.integer(team_int[i] == j)
+    # this functions defines how the constraint function (below) will identify the player teams in the data
+    is_team <- function(j, i) as.integer(data$team[i] == j)
 
     # this adds the constraint to our optimizer model that the total number of selected players from a given team cannot exceed the max_from_team variable (a variable we specify in the model function further below, but that will default to '3')
     add_max_from_team_constraint <- function(model, n, max_from_team, is_team) {
